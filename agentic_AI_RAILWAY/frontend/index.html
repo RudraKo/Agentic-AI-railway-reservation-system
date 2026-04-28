@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RAIL/AI - Agentic Reservation System</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <script src="script.js" defer></script>
+</head>
+<body>
+
+    <header>
+        <div class="logo-group">
+            <span class="logo">RAIL/AI</span>
+            <span class="subtitle">Agentic Reservation System</span>
+        </div>
+        <div id="clock">--- -- --- --:--:--</div>
+        <div class="status-group">
+            <div id="status-dot" class="status-dot"></div>
+            <span id="status-text">CONNECTING...</span>
+        </div>
+    </header>
+
+    <main>
+        <!-- Left Panel -->
+        <section class="panel">
+            <div class="panel-header">My Tickets</div>
+            <div class="ticket-list" id="ticket-list">
+                <div class="empty-state">No active bookings</div>
+            </div>
+            <div class="action-footer">
+                <button class="btn" id="btn-search">⌕ Search Trains</button>
+            </div>
+        </section>
+
+        <!-- Center Panel -->
+        <section class="panel panel-center chat-container">
+            <div id="chat-messages">
+                <div class="msg msg-agent">
+                    <span class="sender-tag">RAIL·AI</span>
+                    System ready. I can book and cancel train tickets.<br><br>
+                    Try: "Book a ticket from Delhi to Pune tomorrow"
+                </div>
+            </div>
+            <div class="chat-input-area">
+                <input type="text" id="chat-input" placeholder="Ask me to book or cancel a ticket..." autocomplete="off">
+                <button class="btn btn-fill" id="btn-send" style="width: auto; padding: 0 16px;">Send</button>
+            </div>
+        </section>
+
+        <!-- Right Panel -->
+        <section class="panel panel-right">
+            <div class="panel-header">Train Info</div>
+            <div class="info-content" id="info-content">
+                <div class="location-section">
+                    <button class="location-bar" id="btn-location">
+                        <span class="location-dot"></span>
+                        <span class="location-name">Detect Location</span>
+                        <span class="location-sub">-- km</span>
+                    </button>
+                    <div id="location-display"></div>
+                </div>
+                <div id="train-options" class="empty-state" style="margin-top: 8px;">
+                    Train options will appear here
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <div class="modal-overlay" id="modal-overlay">
+        <div class="modal-ticket" id="modal-ticket">
+            <!-- Dynamic Content -->
+        </div>
+    </div>
+
+</body>
+</html>
