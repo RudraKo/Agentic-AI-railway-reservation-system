@@ -12,10 +12,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import HTTPException
 from fastapi.responses import JSONResponse
 from mangum import Mangum
+import sys
 import os
 from sqlalchemy import text
 
 logger = logging.getLogger(__name__)
+
+# Add the current directory to sys.path so Vercel can resolve local imports
+sys.path.insert(0, os.path.dirname(__file__))
 
 from config import settings
 from database import engine, SessionLocal, Base
