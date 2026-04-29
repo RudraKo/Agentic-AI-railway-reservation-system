@@ -5,6 +5,9 @@ let currentUserName = localStorage.getItem("railai_user_name") || "";
 let lastUserMessage = "";
 let userLat = null, userLng = null;
 
+/**
+ * Known railway stations and their coordinates for distance calculation.
+ */
 const STATIONS = {
     "Delhi": [28.6448, 77.2167],
     "Mumbai": [19.0760, 72.8777],
@@ -28,7 +31,11 @@ function updateClock() {
 setInterval(updateClock, 1000);
 updateClock();
 
-// --- Health ---
+// --- Health & Connectivity ---
+/**
+ * Periodically check if the backend API is reachable.
+ * Updates the UI status dot accordingly.
+ */
 async function checkHealth() {
     try {
         const res = await fetch(`${API_BASE}/health`);
@@ -48,7 +55,11 @@ async function checkHealth() {
 }
 checkHealth();
 
-// --- Geolocation ---
+// --- Geolocation & Reverse Geocoding ---
+/**
+ * Detects user's current location and finds the nearest city.
+ * Uses Nominatim for reverse geocoding.
+ */
 const locationBtn = document.getElementById('btn-location');
 if (locationBtn) {
     locationBtn.addEventListener('click', () => {
@@ -72,7 +83,11 @@ if (locationBtn) {
     });
 }
 
-// --- Chat & Logic ---
+// --- Chat Communication & Agent Interaction ---
+/**
+ * Handles sending messages to the Agentic AI backend.
+ * Manages session persistence and UI updates.
+ */
 const msgContainer = document.getElementById('chat-messages');
 const chatInput = document.getElementById('chat-input');
 const passengerNameInput = document.getElementById('passenger-name');
@@ -251,7 +266,10 @@ function haversine(lat1, lon1, lat2, lon2) {
     return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 }
 
-// --- Tickets Logic ---
+// --- Ticket Management & UI Refresh ---
+/**
+ * Fetches the latest bookings for the current user and refreszes the UI.
+ */
 async function refreshTickets() {
     try {
         let url = `${API_BASE}/tickets`;
