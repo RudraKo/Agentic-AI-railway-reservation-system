@@ -149,10 +149,14 @@ main {
     border: 1px solid var(--border);
     padding: 10px 12px;
     cursor: pointer;
-    transition: border 0.2s;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.ticket-item:hover { border-color: var(--border-hover); }
+.ticket-item:hover { 
+    border-color: var(--border-hover);
+    background: var(--bg-hover);
+    transform: translateX(4px);
+}
 
 .ticket-id {
     font-family: 'Space Mono', monospace;
