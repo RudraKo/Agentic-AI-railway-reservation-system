@@ -13,6 +13,26 @@ An intelligent, autonomous Agentic AI system that handles railway ticket reserva
 
 ---
 
+## ✨ Key Features
+- **Autonomous Agentic Workflow:** The LLM does not just generate text; it actively executes Python functions to search databases, verify seat capacity, and book tickets autonomously.
+- **Natural Language Payments:** Users can process mock payments simply by clicking the "PAY" button in the UI or by typing *"Pay for my ticket"* in the chat.
+- **Frictionless Guest Mode:** No mandatory sign-ups. Your conversation history and ticket list are securely persisted in your browser's local storage for a seamless experience.
+- **Real-Time Database:** Fully integrated with a remote Neon PostgreSQL database for persistent, multi-relational data storage.
+- **Dynamic Cancellations:** Users can ask the AI to cancel their tickets, which will instantly reflect in the database, refund the seat capacity, and mark the ticket with a red `CANCELLED` badge in the UI.
+
+---
+
+## 🛠️ Tech Stack
+| Component | Technology | Description |
+| :--- | :--- | :--- |
+| **Frontend** | Vanilla HTML/JS/CSS | Blazing fast, zero-dependency dark mode UI with dynamic micro-animations. |
+| **Backend API** | FastAPI (Python) | High-performance async REST framework handling routing and tool dispatch. |
+| **AI / LLM** | Groq (LLaMA 3.3 70B) | Ultra-low latency inference for real-time conversational agentic loops. |
+| **Database** | PostgreSQL (Neon) | Relational database managed via SQLAlchemy ORM. |
+| **Deployment** | Vercel | Seamlessly hosts the static frontend and executes the FastAPI backend as Serverless Functions. |
+
+---
+
 ## 🏗 Architecture & Flow of Work
 
 The system follows a modern LLM-driven tool-calling architecture. The LLM acts as a "brain" that autonomously decides which tools to call based on the user's natural language request.
@@ -34,7 +54,7 @@ graph TD
     B -->|Updates Chat & UI| A
 ```
 
-### Conversation Flow
+### Conversation Flow Example
 1. **User:** *"Book a ticket from Chennai to Bangalore tomorrow"*
 2. **Agent:** 
    - Autonomously calls `search_trains` to find available options.
@@ -43,8 +63,12 @@ graph TD
 3. **Agent:** *"I found the best train... Please provide your passenger name to complete the booking."*
 4. **User:** *"Rudra"*
 5. **Agent:**
-   - Calls `book_ticket` to finalize the reservation.
+   - Calls `book_ticket` to finalize the reservation in `PENDING` status.
    - Responds: *"Ticket booked successfully. Your ticket ID is T123."*
+6. **User:** *"Do payment"*
+7. **Agent:**
+   - Calls `pay_ticket` to update the database.
+   - Responds: *"Payment successful. Reference: PAY-A1B2C3D4."*
 
 ---
 
