@@ -32,10 +32,7 @@ def get_confirmed_tickets(
     if user_id is not None:
         rows = rows.filter(Booking.user_id == user_id)
     elif user_name:
-        user = db.query(User).filter(func.lower(User.name) == user_name.lower()).first()
-        if not user:
-            return {"tickets": []}
-        rows = rows.filter(Booking.user_id == user.id)
+        rows = rows.filter(func.lower(Booking.passenger_name) == user_name.lower())
 
     rows = rows.order_by(Booking.booking_time.desc()).all()
 
@@ -86,6 +83,24 @@ def get_ticket(ticket_id: str, db: Session = Depends(get_db)):
         "payment_reference": booking.payment_reference,
         "booked_at": booking.booking_time,
     }
+
+
+@router.post("/tickets/{ticket_id}/pay")
+def pay_ticket(ticket_id: str, db: Session = Depends(get_db)):
+    """POST /api/tickets/{ticket_id}/pay — Mock payment processor."""
+    import uuid
+    booking = db.query(Booking).filter(Booking.ticket_id == ticket_id).first()
+    if not booking:
+        raise HTTPException(status_code=404, detail="Ticket not found")
+    
+    if booking.payment_status == "PAID":
+        return {"success": False, "message": "Ticket is already paid."}
+        
+    booking.payment_status = "PAID"
+    booking.payment_reference = f"PAY-{uuid.uuid4().hex[:8].upper()}"
+    db.commit()
+    
+    return {"success": True, "message": "Payment successful", "reference": booking.payment_reference}
 
 
 # ---------------------------------------------------------------------------

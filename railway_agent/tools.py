@@ -174,9 +174,6 @@ def book_ticket(
         train.available_seats -= 1
         
         ticket_id = _generate_ticket_id()
-        if payment_status == "PENDING":
-            payment_status = "PAID"
-            payment_reference = f"MOCK-{ticket_id}"
 
         booking = Booking(
             ticket_id=ticket_id,

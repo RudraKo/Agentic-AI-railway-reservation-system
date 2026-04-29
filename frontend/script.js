@@ -90,15 +90,31 @@ if (locationBtn) {
  * Handles sending messages to the Agentic AI backend.
  * Manages session persistence and UI updates.
  */
-const msgContainer = document.getElementById('chat-messages');
 const chatInput = document.getElementById('chat-input');
-const passengerNameInput = document.getElementById('passenger-name');
 const sendBtn = document.getElementById('btn-send');
+const passengerNameInput = document.getElementById('passenger-name');
+const msgContainer = document.getElementById('chat-messages');
 
-if (sendBtn) sendBtn.addEventListener('click', sendMessage);
-if (chatInput) {
+// Initialize Chat UI
+if (sendBtn && chatInput) {
+    sendBtn.addEventListener('click', sendMessage);
     chatInput.addEventListener('keypress', (e) => { if(e.key === 'Enter') sendMessage(); });
 }
+
+function saveChatHistory() {
+    if (!msgContainer) return;
+    localStorage.setItem('railai_chat', msgContainer.innerHTML);
+}
+
+function loadChatHistory() {
+    if (!msgContainer) return;
+    const history = localStorage.getItem('railai_chat');
+    if (history) {
+        msgContainer.innerHTML = history;
+        msgContainer.scrollTop = msgContainer.scrollHeight;
+    }
+}
+loadChatHistory();
 
 async function sendMessage() {
     if (!chatInput) return;
@@ -175,11 +191,12 @@ function appendMessage(sender, text, animate = false) {
                 content.textContent += text[i];
                 i++;
                 msgContainer.scrollTop = msgContainer.scrollHeight;
-                if(i >= text.length) { clearInterval(interval); resolve(); }
+                if(i >= text.length) { clearInterval(interval); saveChatHistory(); resolve(); }
             }, 12);
         });
     } else {
         content.textContent = text;
+        saveChatHistory();
     }
 }
 
@@ -336,9 +353,39 @@ function showTicketModal(t) {
             <div><span class="subtitle">PAY REF:</span><br>${t.payment_reference || 'N/A'}</div>
         </div>
         ${t.status === 'CONFIRMED' ? `<button class="btn modal-cancel-btn" onclick="cancelViaChat('${t.ticket_id}')">CANCEL THIS TICKET</button>` : ''}
+        ${t.status === 'CONFIRMED' && t.payment_status !== 'PAID' ? `<button class="btn btn-fill" style="margin-top:10px; width:100%" onclick="mockPay('${t.ticket_id}', ${t.fare})">PAY ₹${t.fare}</button>` : ''}
     `;
     overlay.style.display = 'flex';
 }
+
+async function mockPay(id, fare) {
+    const overlay = document.getElementById('modal-overlay');
+    if (overlay) overlay.style.display='none';
+    
+    if (chatInput) {
+        chatInput.value = `I am paying ₹${fare} for ticket ${id}`;
+        appendMessage('user', chatInput.value);
+        const indicator = showTyping();
+        
+        try {
+            const res = await fetch(`${API_BASE}/tickets/${id}/pay`, { method: 'POST' });
+            const data = await res.json();
+            if (indicator) indicator.remove();
+            
+            if (data.success) {
+                appendMessage('agent', `[💳 Processing payment...]\nPayment of ₹${fare} successful! Reference: ${data.reference}`, true);
+            } else {
+                appendMessage('agent', data.message || "Payment failed.", true);
+            }
+            refreshTickets();
+        } catch (e) {
+            if (indicator) indicator.remove();
+            appendMessage('agent', "Error communicating with payment gateway.");
+        }
+        chatInput.value = '';
+    }
+}
+
 
 window.onclick = (e) => { 
     const overlay = document.getElementById('modal-overlay');
