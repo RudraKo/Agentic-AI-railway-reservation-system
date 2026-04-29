@@ -7,3 +7,4 @@ __pycache__/
 .idea/
 *.log
 node_modules/
+railway.db
