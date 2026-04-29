@@ -26,13 +26,13 @@ client = Groq(api_key=settings.GROQ_API_KEY)
 SYSTEM_PROMPT = (
     "You are a railway reservation assistant. "
     "You help users book and cancel train tickets autonomously. "
-    "CRITICAL RULE 1: When a user asks to book a ticket, use the search_trains tool to find available trains, then autonomously select the best train (most available seats, then cheapest fare) and book it using the book_ticket tool. "
-    "CRITICAL RULE 2: If multiple trains are found, select the one with the most available seats; if tie, the cheapest fare. "
+    "CRITICAL RULE 1: When a user asks to book a ticket, use the search_trains tool to find available trains FIRST. "
+    "CRITICAL RULE 2: If multiple trains are found, present the options to the user and ask them which train they prefer. DO NOT pick autonomously. "
     "CRITICAL RULE 3: DO NOT book a ticket until the passenger name is known. Ask for it once per session if not provided. "
     "CRITICAL RULE 4: Use check_availability tool to verify seats before booking. "
     "CRITICAL RULE 5: For cancellations, use the cancel_ticket tool immediately if ticket ID is provided. "
     "CRITICAL RULE 6: If the user asks to pay or complete a payment for an existing booking, use the pay_ticket tool with the ticket ID. "
-    "Be concise and friendly. Handle multi-step workflows autonomously without further user input for selections."
+    "Be concise, friendly, and helpful."
 )
 
 # ---------------------------------------------------------------------------
@@ -157,18 +157,18 @@ TOOLS = [
 # ---------------------------------------------------------------------------
 # Tool dispatcher — maps tool name → function, injects db session
 # ---------------------------------------------------------------------------
-def _dispatch_tool(tool_name: str, args: dict, db: Session) -> str:
+def _dispatch_tool(tool_name: str, args: dict, db: Session, user_id: int | None = None) -> str:
     """Call the appropriate tool function and return the result as a JSON string."""
     if tool_name == "search_trains":
         result = search_trains(db=db, **args)
     elif tool_name == "check_availability":
         result = check_availability(db=db, **args)
     elif tool_name == "book_ticket":
-        result = book_ticket(db=db, **args)
+        result = book_ticket(db=db, user_id=user_id, **args)
     elif tool_name == "cancel_ticket":
-        result = cancel_ticket(db=db, **args)
+        result = cancel_ticket(db=db, user_id=user_id, **args)
     elif tool_name == "pay_ticket":
-        result = pay_ticket_tool(db=db, **args)
+        result = pay_ticket_tool(db=db, user_id=user_id, **args)
     else:
         result = {"error": f"Unknown tool: {tool_name}"}
 
@@ -310,145 +310,6 @@ def run_agent(user_message: str, conversation_history: list, db: Session, user_i
     # Append latest user message
     conversation_history.append({"role": "user", "content": user_message})
 
-    lowered = user_message.lower()
-    ticket_id_match = _extract_ticket_id(user_message)
-
-    if "cancel" in lowered:
-        ticket_id = ticket_id_match or _find_last_ticket_id(conversation_history)
-        if not ticket_id:
-            response_text = "I couldn't find a ticket to cancel. Please share a ticket ID."
-            conversation_history.append({"role": "assistant", "content": response_text})
-            return {"response": response_text, "conversation_history": conversation_history}
-
-        result = cancel_ticket(ticket_id, db, user_id=user_id)
-        response_text = result.get("message", "Request processed.")
-        conversation_history.append({"role": "assistant", "content": response_text})
-        return {"response": response_text, "conversation_history": conversation_history}
-
-    if "pay" in lowered or "payment" in lowered:
-        ticket_id = ticket_id_match or _find_last_ticket_id(conversation_history)
-        if not ticket_id:
-            response_text = "I couldn't find a ticket to pay for. Please share your ticket ID."
-            conversation_history.append({"role": "assistant", "content": response_text})
-            return {"response": response_text, "conversation_history": conversation_history}
-
-        result = pay_ticket_tool(ticket_id, db, user_id=user_id)
-        response_text = result.get("message", "Payment request processed.")
-        if result.get("reference"):
-            response_text += f" Reference: {result['reference']}"
-        conversation_history.append({"role": "assistant", "content": response_text})
-        return {"response": response_text, "conversation_history": conversation_history}
-
-    if "book a ticket" in lowered and "from" in lowered and "to" in lowered:
-        route = _extract_route(user_message)
-        if route:
-            source, destination = route
-            travel_date = _extract_travel_date(user_message) or datetime.date.today().isoformat()
-            search_result = search_trains(source, destination, travel_date, db)
-            if search_result.get("trains"):
-                best_train = _pick_best_train(search_result["trains"])
-                if not best_train:
-                    response_text = "No seats are available on matching trains for that route."
-                    conversation_history.append({"role": "assistant", "content": response_text})
-                    return {"response": response_text, "conversation_history": conversation_history}
-
-                passenger_name = _extract_passenger_name(user_message)
-                if not passenger_name:
-                    response_text = (
-                        f"I found the best train automatically ({best_train['train_no']} {best_train['name']}). "
-                        "Please provide the passenger name to complete booking."
-                    )
-                    conversation_history.append({"role": "assistant", "content": response_text})
-                    return {"response": response_text, "conversation_history": conversation_history}
-
-                availability = check_availability(best_train["train_no"], travel_date, db)
-                if not availability.get("success"):
-                    response_text = availability.get("message", "Could not verify seat availability.")
-                    conversation_history.append({"role": "assistant", "content": response_text})
-                    return {"response": response_text, "conversation_history": conversation_history}
-                if not availability.get("can_book"):
-                    response_text = _format_availability(best_train["train_no"], availability)
-                    conversation_history.append({"role": "assistant", "content": response_text})
-                    return {"response": response_text, "conversation_history": conversation_history}
-
-                payment = process_payment(best_train["fare"], user_id=user_id)
-                if not payment.get("success"):
-                    response_text = payment.get("message", "Payment failed. Booking not completed.")
-                    conversation_history.append({"role": "assistant", "content": response_text})
-                    return {"response": response_text, "conversation_history": conversation_history}
-
-                booking = book_ticket(
-                    best_train["train_no"],
-                    passenger_name,
-                    travel_date,
-                    db,
-                    user_id=user_id,
-                    payment_status=payment.get("payment_status", "PAID"),
-                    payment_reference=payment.get("payment_reference"),
-                )
-                if booking.get("success") and booking.get("ticket_id"):
-                    response_text = (
-                        f"Ticket booked successfully on {best_train['train_no']} {best_train['name']} "
-                        f"for {passenger_name}. Ticket ID: {booking['ticket_id']}. "
-                        f"Payment Ref: {payment.get('payment_reference', 'N/A')}."
-                    )
-                else:
-                    response_text = booking.get("message", "Booking failed.")
-                conversation_history.append({"role": "assistant", "content": response_text})
-                return {"response": response_text, "conversation_history": conversation_history}
-
-    if "availability" in lowered or ("seats" in lowered and _extract_train_no(user_message)):
-        train_no = _extract_train_no(user_message)
-        travel_date = _extract_travel_date(user_message) or datetime.date.today().isoformat()
-        if train_no:
-            availability = check_availability(train_no, travel_date, db)
-            response_text = _format_availability(train_no, availability)
-            conversation_history.append({"role": "assistant", "content": response_text})
-            return {"response": response_text, "conversation_history": conversation_history}
-        response_text = "Please share a 5-digit train number to check availability."
-        conversation_history.append({"role": "assistant", "content": response_text})
-        return {"response": response_text, "conversation_history": conversation_history}
-
-    passenger_name = _extract_passenger_name(user_message)
-    if passenger_name:
-        train_no = _find_last_train_no(conversation_history)
-        travel_date = _find_last_travel_date(conversation_history) or datetime.date.today().isoformat()
-        if train_no:
-            availability = check_availability(train_no, travel_date, db)
-            if not availability.get("success"):
-                response_text = availability.get("message", "Could not verify seat availability.")
-                conversation_history.append({"role": "assistant", "content": response_text})
-                return {"response": response_text, "conversation_history": conversation_history}
-            if not availability.get("can_book"):
-                response_text = _format_availability(train_no, availability)
-                conversation_history.append({"role": "assistant", "content": response_text})
-                return {"response": response_text, "conversation_history": conversation_history}
-
-            payment = process_payment(float(availability.get("fare", 0)), user_id=user_id)
-            if not payment.get("success"):
-                response_text = payment.get("message", "Payment failed. Booking not completed.")
-                conversation_history.append({"role": "assistant", "content": response_text})
-                return {"response": response_text, "conversation_history": conversation_history}
-
-            booking = book_ticket(
-                train_no,
-                passenger_name,
-                travel_date,
-                db,
-                user_id=user_id,
-                payment_status=payment.get("payment_status", "PAID"),
-                payment_reference=payment.get("payment_reference"),
-            )
-            if booking.get("success") and booking.get("ticket_id"):
-                response_text = (
-                    f"Ticket booked. Ticket ID: {booking['ticket_id']}. "
-                    f"Payment Ref: {payment.get('payment_reference', 'N/A')}."
-                )
-            else:
-                response_text = booking.get("message", "Booking failed.")
-            conversation_history.append({"role": "assistant", "content": response_text})
-            return {"response": response_text, "conversation_history": conversation_history}
-
     # Build full message list with system prompt prepended, injecting current date
     current_date = datetime.date.today().isoformat()
     dynamic_system_prompt = f"{SYSTEM_PROMPT} Today's date is {current_date}."
@@ -514,7 +375,7 @@ def run_agent(user_message: str, conversation_history: list, db: Session, user_i
                     args = {}
 
                 logger.info(f"Executing tool: {tool_name} with args: {args}")
-                tool_result = _dispatch_tool(tool_name, args, db)
+                tool_result = _dispatch_tool(tool_name, args, db, user_id)
                 logger.info(f"Tool result: {tool_result}")
 
                 try:
