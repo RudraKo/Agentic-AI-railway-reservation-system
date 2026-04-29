@@ -464,7 +464,7 @@ def run_agent(user_message: str, conversation_history: list, db: Session, user_i
         for attempt in range(3):
             try:
                 response = client.chat.completions.create(
-                    model="llama-3.1-8b-instant",
+                    model="llama-3.3-70b-versatile",
                     messages=messages,
                     tools=TOOLS,
                     tool_choice="auto",
@@ -542,6 +542,15 @@ def run_agent(user_message: str, conversation_history: list, db: Session, user_i
 
         # ── Case 2: Model returned a plain text response ─────────────────
         final_response = assistant_message.content or final_response
+        
+        # Sanitize leaked function calls if any
+        if final_response:
+            final_response = re.sub(r'\{function=[^}]+\}.*?(?:</function>|$)', '', final_response, flags=re.DOTALL)
+            final_response = final_response.strip()
+            
+        if not final_response:
+            final_response = "I am processing that for you."
+            
         break
 
     # Persist the final assistant reply into conversation history
