@@ -8,3 +8,5 @@ __pycache__/
 *.log
 node_modules/
 railway.db
+.vercel
+.env*.local
