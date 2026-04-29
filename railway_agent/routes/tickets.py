@@ -27,7 +27,6 @@ def get_confirmed_tickets(
     rows = (
         db.query(Booking, Train)
         .outerjoin(Train, Booking.train_no == Train.train_no)
-        .filter(Booking.status == "CONFIRMED")
     )
     if user_id is not None:
         rows = rows.filter(Booking.user_id == user_id)

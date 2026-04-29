@@ -112,7 +112,7 @@ def chat(request: ChatRequest, db: Session = Depends(get_db)):
         user = db.query(User).filter(User.id == user_id).first()
     else:
         # Resolve username for guest
-        user_name = _sanitize_username(request.user_name or request.passenger_name, session_id)
+        user_name = _sanitize_username(request.passenger_name or request.user_name, session_id)
         # Note: In a real app, you might not want to create a full User model for every guest
         # But for this prototype, we'll ensure we have a user record for the foreign key.
         # We'll use a unique identifier for guest

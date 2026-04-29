@@ -125,19 +125,18 @@ def check_availability(train_no: str, travel_date: str, db: Session) -> dict:
 
 def process_payment(amount: float, user_id: int | None = None) -> dict:
     """
-    Simulate payment processing for a booking.
+    Simulate payment initialization for a booking.
     """
     if amount <= 0:
         return {"success": False, "payment_status": "FAILED", "message": "Invalid payment amount."}
 
-    payment_ref = f"PAY-{uuid.uuid4().hex[:10].upper()}"
     return {
         "success": True,
-        "payment_status": "PAID",
-        "payment_reference": payment_ref,
+        "payment_status": "PENDING",
+        "payment_reference": None,
         "user_id": user_id,
         "amount": round(float(amount), 2),
-        "message": f"Payment successful. Ref: {payment_ref}",
+        "message": "Payment initialized. User must complete payment in the UI.",
     }
 
 
