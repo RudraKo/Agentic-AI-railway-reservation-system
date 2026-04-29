@@ -96,7 +96,8 @@ Confirmed tickets appear in the "My Tickets" panel on the left. Clicking on a ti
 ### 5. Autonomous Cancellation
 A user can cancel a ticket either through the UI button or by telling the agent: "Cancel my ticket [ID]". The agent verifies the ticket ownership, updates the database status, and restores seat availability for other users.
 
-## Security Considerations
-*   **JWT Authentication:** All sensitive operations are protected via JSON Web Tokens.
-*   **Input Sanitization:** The agent uses rigorous schema validation to prevent LLM hallucinations or improper data entry.
-*   **Production Hardening:** The system is configured to manage CORS policies and environment-specific configurations to ensure a secure transition from development to production.
+## License
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Contributing
+Contributions are welcome! Please feel free to submit a Pull Request.
