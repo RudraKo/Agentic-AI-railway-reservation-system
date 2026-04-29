@@ -8,6 +8,9 @@
 
 An intelligent, autonomous Agentic AI system that handles railway ticket reservations using natural language processing. Built with FastAPI, PostgreSQL, and Groq's LLaMA 3.3 model, this system allows users to seamlessly search for trains, check availability, book tickets, and process mock payments entirely through conversation.
 
+> [!IMPORTANT]
+> **Branch Notice:** The complete, production-ready codebase and active development occur on the [`main` branch](https://github.com/RudraKo/Agentic-AI-railway-reservation-system/tree/main). Please ensure you are viewing the `main` branch instead of `master` for the full code.
+
 ---
 
 ## 🏗 Architecture & Flow of Work
