@@ -163,6 +163,7 @@ main {
 .ticket-route { font-size: 11px; color: var(--text-muted); margin: 4px 0; }
 .ticket-footer { display: flex; justify-content: space-between; align-items: center; }
 .ticket-date { font-size: 10px; color: var(--text-muted); }
+.ticket-payment { margin-top: 6px; font-size: 10px; color: var(--text-muted); display: flex; align-items: center; gap: 6px; }
 .badge {
     font-family: 'Space Mono', monospace;
     font-size: 8px;
@@ -173,6 +174,9 @@ main {
 }
 .badge-confirmed { background: rgba(0,212,255,0.1); color: var(--accent); border-color: rgba(0,212,255,0.2); }
 .badge-cancelled { background: rgba(255,59,59,0.1); color: var(--red); border-color: rgba(255,59,59,0.2); }
+.badge-payment-paid { background: rgba(0,255,136,0.12); color: var(--green); border-color: rgba(0,255,136,0.25); }
+.badge-payment-pending { background: rgba(255,255,255,0.08); color: var(--text-mid); border-color: rgba(255,255,255,0.15); }
+.badge-payment-failed { background: rgba(255,59,59,0.1); color: var(--red); border-color: rgba(255,59,59,0.25); }
 
 .empty-state {
     margin: auto;
@@ -280,6 +284,10 @@ main {
     background: var(--bg-panel);
 }
 
+#passenger-name {
+    max-width: 240px;
+}
+
 input[type="text"] {
     flex-grow: 1;
     background: var(--bg-card);
@@ -385,6 +393,13 @@ input[type="text"]::placeholder { color: var(--text-dim); }
 .train-times { font-family: 'Space Mono', monospace; font-size: 9px; color: var(--text-muted); display: flex; justify-content: space-between; gap: 6px; }
 .train-seats { font-family: 'Space Mono', monospace; font-size: 9px; color: var(--green); display: flex; justify-content: space-between; }
 .train-dist { font-size: 9px; color: var(--text-dim); font-family: 'Space Mono', monospace; border-top: 1px solid var(--border); padding-top: 6px; }
+.train-auto-note {
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    color: var(--accent);
+    border-top: 1px solid var(--border);
+    padding-top: 6px;
+}
 
 .train-card .btn.btn-fill {
     background: transparent;

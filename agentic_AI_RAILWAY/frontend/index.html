@@ -41,11 +41,13 @@
             <div id="chat-messages">
                 <div class="msg msg-agent">
                     <span class="sender-tag">RAIL·AI</span>
-                    System ready. I can book and cancel train tickets.<br><br>
-                    Try: "Book a ticket from Delhi to Pune tomorrow"
+                    System ready. I can autonomously book and cancel tickets.<br><br>
+                    Add your passenger name once, then try:
+                    "Book a ticket from Delhi to Pune tomorrow"
                 </div>
             </div>
             <div class="chat-input-area">
+                <input type="text" id="passenger-name" placeholder="Passenger name (required for booking)" autocomplete="off">
                 <input type="text" id="chat-input" placeholder="Ask me to book or cancel a ticket..." autocomplete="off">
                 <button class="btn btn-fill" id="btn-send" style="width: auto; padding: 0 16px;">Send</button>
             </div>
@@ -64,7 +66,7 @@
                     <div id="location-display"></div>
                 </div>
                 <div id="train-options" class="empty-state" style="margin-top: 8px;">
-                    Train options will appear here
+                    Matching trains and best route insights will appear here
                 </div>
             </div>
         </section>

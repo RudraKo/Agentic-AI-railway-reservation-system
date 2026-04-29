@@ -1,5 +1,7 @@
 const API_BASE = "http://127.0.0.1:8000/api";
 let currentSessionId = null;
+let currentUserId = null;
+let currentUserName = localStorage.getItem("railai_user_name") || "";
 let lastUserMessage = "";
 let userLat = null, userLng = null;
 
@@ -73,6 +75,7 @@ if (locationBtn) {
 // --- Chat & Logic ---
 const msgContainer = document.getElementById('chat-messages');
 const chatInput = document.getElementById('chat-input');
+const passengerNameInput = document.getElementById('passenger-name');
 const sendBtn = document.getElementById('btn-send');
 
 if (sendBtn) sendBtn.addEventListener('click', sendMessage);
@@ -94,11 +97,21 @@ async function sendMessage() {
         const res = await fetch(`${API_BASE}/chat`, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({message: text, session_id: currentSessionId})
+            body: JSON.stringify({
+                message: text,
+                session_id: currentSessionId,
+                passenger_name: passengerNameInput ? passengerNameInput.value.trim() : "",
+                user_name: currentUserName
+            })
         });
         const data = await res.json();
         if (indicator) indicator.remove();
         currentSessionId = data.session_id;
+        currentUserId = data.user_id;
+        currentUserName = data.user_name || currentUserName;
+        if (currentUserName) {
+            localStorage.setItem("railai_user_name", currentUserName);
+        }
 
         await appendMessage('agent', data.response, true);
         refreshTickets();
@@ -224,17 +237,10 @@ function renderTrains(trains) {
             <div class="train-times">Dep: ${t.departure} | Arr: ${t.arrival} | ₹${t.fare}</div>
             <div class="train-seats">${t.available_seats} seats available</div>
             ${distHtml}
-            <button class="btn btn-fill" onclick="selectTrain('${t.train_no}')">Select →</button>
+            <div class="train-auto-note">Auto-selection enabled: best train is chosen during booking</div>
         `;
         container.appendChild(card);
     });
-}
-
-function selectTrain(id) {
-    if (chatInput) {
-        chatInput.value = `Train number ${id}`;
-        chatInput.focus();
-    }
 }
 
 function haversine(lat1, lon1, lat2, lon2) {
@@ -248,7 +254,13 @@ function haversine(lat1, lon1, lat2, lon2) {
 // --- Tickets Logic ---
 async function refreshTickets() {
     try {
-        const res = await fetch(`${API_BASE}/tickets`);
+        let url = `${API_BASE}/tickets`;
+        if (currentUserId) {
+            url = `${url}?user_id=${encodeURIComponent(currentUserId)}`;
+        } else if (currentUserName) {
+            url = `${url}?user_name=${encodeURIComponent(currentUserName)}`;
+        }
+        const res = await fetch(url);
         const data = await res.json();
         const list = document.getElementById('ticket-list');
         if (!list) return;
@@ -270,6 +282,9 @@ async function refreshTickets() {
                 <div class="ticket-footer">
                     <span class="ticket-date">${t.travel_date}</span>
                     <span class="badge badge-${t.status.toLowerCase()}">${t.status}</span>
+                </div>
+                <div class="ticket-payment">
+                    Payment: <span class="badge badge-payment-${(t.payment_status || 'pending').toLowerCase()}">${t.payment_status || 'PENDING'}</span>
                 </div>
             `;
             list.appendChild(item);
@@ -297,6 +312,8 @@ function showTicketModal(t) {
             <div><span class="subtitle">DATE:</span><br>${t.travel_date}</div>
             <div><span class="subtitle">FARE:</span><br>₹${t.fare}</div>
             <div><span class="subtitle">STATUS:</span><br><span style="color:${t.status==='CONFIRMED'?'var(--green)':'var(--red)'}">${t.status}</span></div>
+            <div><span class="subtitle">PAYMENT:</span><br>${t.payment_status || 'PENDING'}</div>
+            <div><span class="subtitle">PAY REF:</span><br>${t.payment_reference || 'N/A'}</div>
         </div>
         ${t.status === 'CONFIRMED' ? `<button class="btn modal-cancel-btn" onclick="cancelViaChat('${t.ticket_id}')">CANCEL THIS TICKET</button>` : ''}
     `;
@@ -320,6 +337,9 @@ function cancelViaChat(id) {
 const searchBtn = document.getElementById('btn-search');
 if (searchBtn) {
     searchBtn.addEventListener('click', () => {
-        if (chatInput) chatInput.focus();
+        if (chatInput) {
+            chatInput.value = "Book a ticket from Chennai to Bangalore tomorrow";
+            chatInput.focus();
+        }
     });
 }
