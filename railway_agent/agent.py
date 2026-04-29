@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 
 import datetime
 from config import settings
-from tools import search_trains, check_availability, process_payment, book_ticket, cancel_ticket
+from tools import search_trains, check_availability, process_payment, book_ticket, cancel_ticket, pay_ticket_tool
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +31,7 @@ SYSTEM_PROMPT = (
     "CRITICAL RULE 3: DO NOT book a ticket until the passenger name is known. Ask for it once per session if not provided. "
     "CRITICAL RULE 4: Use check_availability tool to verify seats before booking. "
     "CRITICAL RULE 5: For cancellations, use the cancel_ticket tool immediately if ticket ID is provided. "
+    "CRITICAL RULE 6: If the user asks to pay or complete a payment for an existing booking, use the pay_ticket tool with the ticket ID. "
     "Be concise and friendly. Handle multi-step workflows autonomously without further user input for selections."
 )
 
@@ -133,6 +134,23 @@ TOOLS = [
                 "required": ["ticket_id"]
             }
         }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "pay_ticket",
+            "description": "Process a payment for a pending ticket using the ticket ID.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "ticket_id": {
+                        "type": "string",
+                        "description": "Ticket ID to pay for, e.g. 'T3K9MZ'"
+                    }
+                },
+                "required": ["ticket_id"]
+            }
+        }
     }
 ]
 
@@ -149,6 +167,8 @@ def _dispatch_tool(tool_name: str, args: dict, db: Session) -> str:
         result = book_ticket(db=db, **args)
     elif tool_name == "cancel_ticket":
         result = cancel_ticket(db=db, **args)
+    elif tool_name == "pay_ticket":
+        result = pay_ticket_tool(db=db, **args)
     else:
         result = {"error": f"Unknown tool: {tool_name}"}
 
@@ -302,6 +322,20 @@ def run_agent(user_message: str, conversation_history: list, db: Session, user_i
 
         result = cancel_ticket(ticket_id, db, user_id=user_id)
         response_text = result.get("message", "Request processed.")
+        conversation_history.append({"role": "assistant", "content": response_text})
+        return {"response": response_text, "conversation_history": conversation_history}
+
+    if "pay" in lowered or "payment" in lowered:
+        ticket_id = ticket_id_match or _find_last_ticket_id(conversation_history)
+        if not ticket_id:
+            response_text = "I couldn't find a ticket to pay for. Please share your ticket ID."
+            conversation_history.append({"role": "assistant", "content": response_text})
+            return {"response": response_text, "conversation_history": conversation_history}
+
+        result = pay_ticket_tool(ticket_id, db, user_id=user_id)
+        response_text = result.get("message", "Payment request processed.")
+        if result.get("reference"):
+            response_text += f" Reference: {result['reference']}"
         conversation_history.append({"role": "assistant", "content": response_text})
         return {"response": response_text, "conversation_history": conversation_history}
 

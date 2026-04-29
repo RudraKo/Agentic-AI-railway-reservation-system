@@ -238,3 +238,36 @@ def cancel_ticket(ticket_id: str, db: Session, user_id: int | None = None) -> di
         db.rollback()
         logger.error(f"Error in cancel_ticket: {str(e)}")
         return {"success": False, "message": f"Cancellation failed: {str(e)}"}
+
+def pay_ticket_tool(ticket_id: str, db: Session, user_id: int | None = None) -> dict:
+    """
+    Process payment for an existing booking by ticket_id via the AI agent.
+    """
+    ticket_id = ticket_id.strip().upper()
+    try:
+        query = db.query(Booking).filter(Booking.ticket_id == ticket_id)
+        if user_id is not None:
+            query = query.filter(Booking.user_id == user_id)
+        booking = query.first()
+        if not booking:
+            return {"success": False, "message": "Ticket not found"}
+        
+        if booking.status == "CANCELLED":
+            return {"success": False, "message": "Cannot pay for a cancelled ticket."}
+            
+        if booking.payment_status == "PAID":
+            return {"success": False, "message": "Ticket is already paid."}
+            
+        booking.payment_status = "PAID"
+        booking.payment_reference = f"PAY-{uuid.uuid4().hex[:8].upper()}"
+        db.commit()
+        
+        return {
+            "success": True, 
+            "message": f"Payment successful for ticket {ticket_id}.", 
+            "reference": booking.payment_reference
+        }
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error in pay_ticket_tool: {str(e)}")
+        return {"success": False, "message": f"Payment failed: {str(e)}"}
