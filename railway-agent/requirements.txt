@@ -11,3 +11,4 @@ passlib[bcrypt]
 python-multipart
 gunicorn
 httpx
+mangum

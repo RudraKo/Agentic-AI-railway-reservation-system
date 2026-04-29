@@ -12,6 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import HTTPException
 from fastapi.responses import JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
+from mangum import Mangum
 import os
 from sqlalchemy import text
 
@@ -252,3 +253,6 @@ if __name__ == "__main__":
     # Use PORT environment variable for deployment compatibility
     port = int(os.getenv("PORT", 8000))
     uvicorn.run("main:app", host="0.0.0.0", port=port, reload=(settings.APP_ENV == "development"))
+
+# Vercel handler
+handler = Mangum(app)
