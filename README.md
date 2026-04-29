@@ -31,6 +31,9 @@ An intelligent, autonomous Agentic AI system that handles railway ticket reserva
 | **Database** | PostgreSQL (Neon) | Relational database managed via SQLAlchemy ORM. |
 | **Deployment** | Vercel | Seamlessly hosts the static frontend and executes the FastAPI backend as Serverless Functions. |
 
+> **Why Groq instead of OpenAI?**
+> OpenAI's API requires paid credits which can add up quickly during frequent agentic tool calls. Groq was chosen because it provides blazing-fast inference for open-source models like LLaMA 3.3 for free, making it ideal for testing and running autonomous agent loops without cost barriers.
+
 ---
 
 ## 🏗 Architecture & Flow of Work
