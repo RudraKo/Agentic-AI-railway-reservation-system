@@ -15,8 +15,15 @@ The Agentic AI Railway Reservation System is a sophisticated platform designed t
 
 ### Frontend
 *   **HTML5/CSS3:** Modern, responsive interface with a terminal-inspired aesthetic.
-*   **Vanilla JavaScript:** Client-side logic for real-time chat, geolocation integration, and dynamic UI updates.
-*   **Nominatim (OpenStreetMap):** Reverse geocoding for detecting the user's nearest railway station.
+## Features
+
+- **Autonomous Agentic Workflow:** Uses LLMs to interpret natural language and execute train reservation tasks.
+- **Real-time Session Management:** Tracks user context and booking state across multiple interactions.
+- **Dynamic Geolocation:** Automatically detects the nearest railway stations using reverse geocoding.
+- **Terminal-Inspired UI:** A modern, sleek dark-mode interface for a premium user experience.
+- **Secure Authentication:** Implements JWT-based user identity and secure password hashing.
+- **Database Persistence:** Scalable PostgreSQL integration for managing trains, bookings, and users.
+- **Automated Seeding:** Self-populating database with realistic Indian train data on startup.
 
 ## Local Development Setup
 
