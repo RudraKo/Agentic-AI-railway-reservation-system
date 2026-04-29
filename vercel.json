@@ -1,18 +1,23 @@
 {
+  "version": 2,
   "builds": [
     {
-      "src": "railway-agent/main.py",
+      "src": "railway_agent/main.py",
       "use": "@vercel/python"
     }
   ],
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "railway-agent/main.py"
+      "dest": "railway_agent/main.py"
+    },
+    {
+      "src": "/static/(.*)",
+      "dest": "frontend/$1"
     },
     {
       "src": "/(.*)",
-      "dest": "railway-agent/main.py"
+      "dest": "frontend/index.html"
     }
   ]
 }
