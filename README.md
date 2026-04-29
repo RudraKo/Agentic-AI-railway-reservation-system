@@ -1,103 +1,131 @@
 # Agentic AI Railway Reservation System
 
-## Overview
-The Agentic AI Railway Reservation System is a sophisticated platform designed to automate the train booking and cancellation process using large language models (LLMs).
+![SYSTEM ONLINE](https://img.shields.io/badge/System-ONLINE-brightgreen)
+![LLM](https://img.shields.io/badge/LLM-LLaMA--3.3--70B-blue)
+![Backend](https://img.shields.io/badge/Backend-FastAPI-009688)
+![Database](https://img.shields.io/badge/Database-PostgreSQL-336791)
+![Deployment](https://img.shields.io/badge/Deployed-Vercel-black)
 
-- [Architecture Details](docs/architecture.md)
-- [Detailed Setup Guide](docs/setup.md)
+An intelligent, autonomous Agentic AI system that handles railway ticket reservations using natural language processing. Built with FastAPI, PostgreSQL, and Groq's LLaMA 3.3 model, this system allows users to seamlessly search for trains, check availability, book tickets, and process mock payments entirely through conversation.
 
-## Architecture and Technologies
+---
 
-### Backend
-*   **FastAPI:** High-performance web framework for building the RESTful API.
-*   **SQLAlchemy:** Object-Relational Mapping (ORM) for database interactions.
-*   **Groq (Llama-3.3-70b-versatile):** The primary inference engine for the agentic reasoning loop and tool-calling capabilities.
-*   **Pydantic Settings:** Management of environment variables and application configurations.
-*   **PyJWT & Passlib:** Secure user authentication and password hashing.
-*   **Neon PostgreSQL:** Serverless cloud database for persistent storage.
+## 🏗 Architecture & Flow of Work
 
-### Frontend
-*   **HTML5/CSS3:** Modern, responsive interface with a terminal-inspired aesthetic.
-## Features
+The system follows a modern LLM-driven tool-calling architecture. The LLM acts as a "brain" that autonomously decides which tools to call based on the user's natural language request.
 
-- **Autonomous Agentic Workflow:** Uses LLMs to interpret natural language and execute train reservation tasks.
-- **Real-time Session Management:** Tracks user context and booking state across multiple interactions.
-- **Dynamic Geolocation:** Automatically detects the nearest railway stations using reverse geocoding.
-- **Terminal-Inspired UI:** A modern, sleek dark-mode interface for a premium user experience.
-- **Secure Authentication:** Implements JWT-based user identity and secure password hashing.
-- **Database Persistence:** Scalable PostgreSQL integration for managing trains, bookings, and users.
-- **Automated Seeding:** Self-populating database with realistic Indian train data on startup.
+```mermaid
+graph TD
+    A[User / Frontend UI] -->|Natural Language Prompt| B[FastAPI Backend]
+    B -->|Context + Prompt| C[Groq LLaMA-3.3-70B]
+    C -.->|Tool Call Request| D{Tool Dispatcher}
+    
+    D -->|search_trains| E[(Neon PostgreSQL)]
+    D -->|check_availability| E
+    D -->|book_ticket| E
+    D -->|cancel_ticket| E
+    
+    E -->|DB Results| D
+    D -.->|Tool Results JSON| C
+    C -->|Final Response| B
+    B -->|Updates Chat & UI| A
+```
 
-## Local Development Setup
+### Conversation Flow
+1. **User:** *"Book a ticket from Chennai to Bangalore tomorrow"*
+2. **Agent:** 
+   - Autonomously calls `search_trains` to find available options.
+   - Evaluates trains autonomously based on seat availability and lowest fare.
+   - Checks capacity via `check_availability`.
+3. **Agent:** *"I found the best train... Please provide your passenger name to complete the booking."*
+4. **User:** *"Rudra"*
+5. **Agent:**
+   - Calls `book_ticket` to finalize the reservation.
+   - Responds: *"Ticket booked successfully. Your ticket ID is T123."*
 
-### Prerequisites
-*   Python 3.9 or higher
-*   A Groq API Key
-*   A PostgreSQL database (Neon DB recommended)
+---
 
-### Backend Configuration
-1.  Navigate to the backend directory:
-    ```bash
-    cd railway-agent
-    ```
-2.  Create and activate a virtual environment:
-    ```bash
-    python -m venv .venv
-    source .venv/bin/activate
-    ```
-3.  Install dependencies:
-    ```bash
-    pip install -r requirements.txt
-    ```
-4.  Configure environment variables in a `.env` file:
-    ```env
-    GROQ_API_KEY=your_api_key_here
-    DATABASE_URL=your_postgresql_url_here
-    SECRET_KEY=your_random_secret_string
-    ALLOWED_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
-    APP_ENV=development
-    ```
-5.  Start the FastAPI server:
-    ```bash
-    uvicorn main:app --host 127.0.0.1 --port 8000
-    ```
+## 📂 Folder Structure
 
-### Frontend Configuration
-1.  Navigate to the frontend directory.
-2.  Serve the files using a local web server:
-    ```bash
-    python3 -m http.server 3000
-    ```
-3.  Access the application in your browser at `http://localhost:3000`.
+```text
+.
+├── frontend/               # Vanilla JS, HTML, and CSS (Vercel static hosting)
+│   ├── index.html          # Main UI entry point
+│   ├── script.js           # Chat logic, API fetching, UI state management
+│   └── style.css           # Premium dark-mode styling
+│
+├── railway_agent/          # FastAPI Backend (Vercel Serverless Functions)
+│   ├── main.py             # FastAPI application and routing entry point
+│   ├── agent.py            # Groq LLM integration and Agentic Loop logic
+│   ├── tools.py            # Python tools (search, book, cancel, pay) exposed to LLM
+│   ├── database.py         # SQLAlchemy engine and session management
+│   ├── models.py           # PostgreSQL Database schemas (User, Train, Booking)
+│   ├── config.py           # Environment variables (Pydantic BaseSettings)
+│   ├── sessions.py         # In-memory session and conversation history manager
+│   └── routes/             # REST API Endpoints
+│       ├── chat.py         # /api/chat route
+│       ├── tickets.py      # /api/tickets route
+│       └── auth.py         # /api/register & /api/login routes
+│
+├── vercel.json             # Vercel deployment configuration
+└── .env                    # Environment variables (not tracked in Git)
+```
 
-## Operational Flow
+---
 
-### 1. System Initialization
-Upon launching the application, the system performs a health check to verify backend connectivity and database status. The sidebar on the right allows the user to detect their current location, which calculates distances to the nearest railway hubs.
+## 🚀 How to Run Locally
 
-### 2. User Authentication and Identity
-To initiate the agentic flow, the user should provide their name in the input field. This identity is used to track bookings and personal tickets across sessions.
+### 1. Prerequisites
+- Python 3.10+
+- A PostgreSQL Database (e.g., Neon.tech)
+- Groq API Key
 
-### 3. Natural Language Booking
-The user can interact with the agent via the chat interface. Example commands include:
-*   "Search for trains from Delhi to Mumbai tomorrow."
-*   "Book a ticket for the Rajdhani Express on Friday."
+### 2. Installation
+Clone the repository and set up a Python virtual environment:
 
-The agent autonomously performs the following steps:
-*   Parses the source, destination, and date.
-*   Searches the database for matching trains.
-*   Selects the optimal train based on seat availability and fare.
-*   Validates passenger data and processes a simulated payment.
-*   Returns a unique Ticket ID upon success.
+```bash
+git clone https://github.com/RudraKo/Agentic-AI-railway-reservation-system.git
+cd Agentic-AI-railway-reservation-system
 
-### 4. Ticket Management
-Confirmed tickets appear in the "My Tickets" panel on the left. Clicking on a ticket displays a digital pass with full journey details, including departure times, platforms, and payment references.
+# Create and activate virtual environment
+python3 -m venv venv
+source venv/bin/activate  # On Windows use `venv\Scripts\activate`
 
-### 5. Autonomous Cancellation
-A user can cancel a ticket either through the UI button or by telling the agent: "Cancel my ticket [ID]". The agent verifies the ticket ownership, updates the database status, and restores seat availability for other users.
+# Install backend dependencies
+pip install -r railway_agent/requirements.txt
+```
 
-## License
-This project is licensed under the MIT License - see the LICENSE file for details.
+### 3. Environment Variables
+Create a `.env` file in the `railway_agent` directory with the following variables:
+```env
+GROQ_API_KEY="your_groq_api_key_here"
+DATABASE_URL="postgresql://user:password@host/dbname"
+APP_ENV="development"
+```
 
-## Contributing
-Contributions are welcome! Please feel free to submit a Pull Request.
+### 4. Start the Application
+Run the FastAPI backend server:
+
+```bash
+# From the root directory
+python3 railway_agent/main.py
+```
+The API will start on `http://localhost:8000`.
+
+Next, open the frontend. Since the `API_BASE` in the frontend dynamically detects if it is running locally, you can simply open `frontend/index.html` directly in your browser, or serve it using Python's built-in HTTP server:
+```bash
+python3 -m http.server 3000 --directory frontend
+```
+Then navigate to `http://localhost:3000` in your browser.
+
+---
+
+## 🌐 Deployment
+This project is configured for seamless deployment on **Vercel** combining serverless Python functions with a static frontend.
+
+1. Install the Vercel CLI: `npm i -g vercel`
+2. Run `vercel --prod` in the project root.
+3. Ensure that `GROQ_API_KEY` and `DATABASE_URL` are added to your Vercel Project Settings under Environment Variables.
+
+---
+*Developed as an advanced Agentic AI implementation.*
