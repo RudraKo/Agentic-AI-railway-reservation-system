@@ -9,3 +9,5 @@ pydantic-settings
 pyjwt
 passlib[bcrypt]
 python-multipart
+gunicorn
+httpx

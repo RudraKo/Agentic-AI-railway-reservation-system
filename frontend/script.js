@@ -1,4 +1,6 @@
-const API_BASE = "http://127.0.0.1:8000/api";
+const API_BASE = (window.location.hostname === "127.0.0.1" || window.location.hostname === "localhost") 
+    ? "http://127.0.0.1:8000/api" 
+    : "/api";
 let currentSessionId = null;
 let currentUserId = null;
 let currentUserName = localStorage.getItem("railai_user_name") || "";
