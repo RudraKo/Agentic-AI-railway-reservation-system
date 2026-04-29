@@ -1,7 +1,10 @@
 # Agentic AI Railway Reservation System
 
 ## Overview
-The Agentic AI Railway Reservation System is a sophisticated platform designed to automate the train booking and cancellation process using large language models (LLMs). By leveraging an agentic workflow, the system interprets natural language requests, manages user sessions, and interacts with a PostgreSQL database to perform real-time transactions.
+The Agentic AI Railway Reservation System is a sophisticated platform designed to automate the train booking and cancellation process using large language models (LLMs).
+
+- [Architecture Details](docs/architecture.md)
+- [Detailed Setup Guide](docs/setup.md)
 
 ## Architecture and Technologies
 
