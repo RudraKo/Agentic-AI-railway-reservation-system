@@ -10,8 +10,7 @@ from datetime import datetime, timedelta
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import HTTPException
-from fastapi.responses import JSONResponse, FileResponse
-from fastapi.staticfiles import StaticFiles
+from fastapi.responses import JSONResponse
 from mangum import Mangum
 import os
 from sqlalchemy import text
@@ -183,25 +182,6 @@ app.add_middleware(
 app.include_router(auth_router, prefix="/api")
 app.include_router(chat_router, prefix="/api")
 app.include_router(tickets_router, prefix="/api")
-
-# ---------------------------------------------------------------------------
-# Static Files — Serve frontend from the root
-# ---------------------------------------------------------------------------
-# Resolve the frontend path relative to this file
-base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-frontend_path = os.path.join(base_dir, "frontend")
-
-if os.path.exists(frontend_path):
-    app.mount("/static", StaticFiles(directory=frontend_path), name="static")
-
-    @app.get("/")
-    async def serve_frontend():
-        """Serve the main frontend page."""
-        return FileResponse(os.path.join(frontend_path, "index.html"))
-else:
-    @app.get("/")
-    def root():
-        return {"message": "🚆 Railway Reservation Agent API is running. (Frontend folder not found)"}
 
 
 # ---------------------------------------------------------------------------
