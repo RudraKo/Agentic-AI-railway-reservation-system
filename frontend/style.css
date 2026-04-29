@@ -383,11 +383,15 @@ input[type="text"]::placeholder { color: var(--text-dim); }
     display: flex;
     flex-direction: column;
     gap: 8px;
-    transition: all 0.2s;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     border-radius: 2px;
 }
 
-.train-card:hover { border-color: var(--border-hover); transform: translateY(-1px); }
+.train-card:hover { 
+    border-color: var(--border-hover); 
+    background: var(--bg-hover);
+    transform: translateY(-2px) scale(1.01);
+}
 
 .train-row-1 { display: flex; justify-content: space-between; align-items: baseline; }
 .train-name { font-family: 'Space Mono', monospace; font-weight: 700; font-size: 10px; color: var(--text); }
