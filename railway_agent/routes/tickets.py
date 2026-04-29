@@ -18,12 +18,10 @@ router = APIRouter()
 # ---------------------------------------------------------------------------
 
 @router.get("/tickets")
-def get_confirmed_tickets(
-    user_id: Optional[int] = None,
-    user_name: Optional[str] = None,
-    db: Session = Depends(get_db),
-):
-    """GET /api/tickets — Return confirmed bookings, optionally scoped by user."""
+def get_confirmed_tickets(user_id: int | None = None, user_name: str | None = None, db: Session = Depends(get_db)):
+    if user_id is None and not user_name:
+        return {"tickets": []}
+        
     rows = (
         db.query(Booking, Train)
         .outerjoin(Train, Booking.train_no == Train.train_no)
