@@ -1,10 +1,15 @@
-const API_BASE = "http://127.0.0.1:8000/api";
+const API_BASE = (window.location.hostname === "127.0.0.1" || window.location.hostname === "localhost") 
+    ? "http://127.0.0.1:8000/api" 
+    : "/api";
 let currentSessionId = null;
 let currentUserId = null;
 let currentUserName = localStorage.getItem("railai_user_name") || "";
 let lastUserMessage = "";
 let userLat = null, userLng = null;
 
+/**
+ * Known railway stations and their coordinates for distance calculation.
+ */
 const STATIONS = {
     "Delhi": [28.6448, 77.2167],
     "Mumbai": [19.0760, 72.8777],
@@ -28,7 +33,11 @@ function updateClock() {
 setInterval(updateClock, 1000);
 updateClock();
 
-// --- Health ---
+// --- Health & Connectivity ---
+/**
+ * Periodically check if the backend API is reachable.
+ * Updates the UI status dot accordingly.
+ */
 async function checkHealth() {
     try {
         const res = await fetch(`${API_BASE}/health`);
@@ -48,7 +57,11 @@ async function checkHealth() {
 }
 checkHealth();
 
-// --- Geolocation ---
+// --- Geolocation & Reverse Geocoding ---
+/**
+ * Detects user's current location and finds the nearest city.
+ * Uses Nominatim for reverse geocoding.
+ */
 const locationBtn = document.getElementById('btn-location');
 if (locationBtn) {
     locationBtn.addEventListener('click', () => {
@@ -72,16 +85,36 @@ if (locationBtn) {
     });
 }
 
-// --- Chat & Logic ---
-const msgContainer = document.getElementById('chat-messages');
+// --- Chat Communication & Agent Interaction ---
+/**
+ * Handles sending messages to the Agentic AI backend.
+ * Manages session persistence and UI updates.
+ */
 const chatInput = document.getElementById('chat-input');
-const passengerNameInput = document.getElementById('passenger-name');
 const sendBtn = document.getElementById('btn-send');
+const passengerNameInput = document.getElementById('passenger-name');
+const msgContainer = document.getElementById('chat-messages');
 
-if (sendBtn) sendBtn.addEventListener('click', sendMessage);
-if (chatInput) {
+// Initialize Chat UI
+if (sendBtn && chatInput) {
+    sendBtn.addEventListener('click', sendMessage);
     chatInput.addEventListener('keypress', (e) => { if(e.key === 'Enter') sendMessage(); });
 }
+
+function saveChatHistory() {
+    if (!msgContainer) return;
+    localStorage.setItem('railai_chat', msgContainer.innerHTML);
+}
+
+function loadChatHistory() {
+    if (!msgContainer) return;
+    const history = localStorage.getItem('railai_chat');
+    if (history) {
+        msgContainer.innerHTML = history;
+        msgContainer.scrollTop = msgContainer.scrollHeight;
+    }
+}
+loadChatHistory();
 
 async function sendMessage() {
     if (!chatInput) return;
@@ -158,11 +191,12 @@ function appendMessage(sender, text, animate = false) {
                 content.textContent += text[i];
                 i++;
                 msgContainer.scrollTop = msgContainer.scrollHeight;
-                if(i >= text.length) { clearInterval(interval); resolve(); }
+                if(i >= text.length) { clearInterval(interval); saveChatHistory(); resolve(); }
             }, 12);
         });
     } else {
         content.textContent = text;
+        saveChatHistory();
     }
 }
 
@@ -251,7 +285,10 @@ function haversine(lat1, lon1, lat2, lon2) {
     return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 }
 
-// --- Tickets Logic ---
+// --- Ticket Management & UI Refresh ---
+/**
+ * Fetches the latest bookings for the current user and refreszes the UI.
+ */
 async function refreshTickets() {
     try {
         let url = `${API_BASE}/tickets`;
@@ -316,9 +353,39 @@ function showTicketModal(t) {
             <div><span class="subtitle">PAY REF:</span><br>${t.payment_reference || 'N/A'}</div>
         </div>
         ${t.status === 'CONFIRMED' ? `<button class="btn modal-cancel-btn" onclick="cancelViaChat('${t.ticket_id}')">CANCEL THIS TICKET</button>` : ''}
+        ${t.status === 'CONFIRMED' && t.payment_status !== 'PAID' ? `<button class="btn btn-fill" style="margin-top:10px; width:100%" onclick="mockPay('${t.ticket_id}', ${t.fare})">PAY ₹${t.fare}</button>` : ''}
     `;
     overlay.style.display = 'flex';
 }
+
+async function mockPay(id, fare) {
+    const overlay = document.getElementById('modal-overlay');
+    if (overlay) overlay.style.display='none';
+    
+    if (chatInput) {
+        chatInput.value = `I am paying ₹${fare} for ticket ${id}`;
+        appendMessage('user', chatInput.value);
+        const indicator = showTyping();
+        
+        try {
+            const res = await fetch(`${API_BASE}/tickets/${id}/pay`, { method: 'POST' });
+            const data = await res.json();
+            if (indicator) indicator.remove();
+            
+            if (data.success) {
+                appendMessage('agent', `[💳 Processing payment...]\nPayment of ₹${fare} successful! Reference: ${data.reference}`, true);
+            } else {
+                appendMessage('agent', data.message || "Payment failed.", true);
+            }
+            refreshTickets();
+        } catch (e) {
+            if (indicator) indicator.remove();
+            appendMessage('agent', "Error communicating with payment gateway.");
+        }
+        chatInput.value = '';
+    }
+}
+
 
 window.onclick = (e) => { 
     const overlay = document.getElementById('modal-overlay');
